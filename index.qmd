@@ -1,0 +1,274 @@
+---
+title: "NOSO Targeting"
+author:  
+   Idrissa DABO/RAM Officer
+title-block-banner: "#D7DBDD"
+date-modified: "03/25/2025"
+date-format: "MM/D/YYYY"
+lang: fr
+language: 
+  title-block-author-single: "RAM WFP Cameroon"
+  title-block-modified: "Last Update"
+format: 
+  html:
+    self-contained: true
+    toc: true
+    toc-location: right
+editor: visual
+---
+
+```{r echo=FALSE}
+htmltools::img(src = knitr::image_uri(file.path("image/WFP-logo.png")), 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;',width = 200,height = 145)
+```
+
+```{r setup, include=FALSE}
+
+library(tidyverse)
+library(connectoModa)
+library(openxlsx)
+library(haven)
+library(labelled)
+library(gtsummary)
+library(fs)
+library(wordcloud)
+library(sf)
+library(leaflet)
+library(ggplot2)
+library(ggeasy)
+library(writexl)
+library(DT)
+library(echarts4r)
+library(fst)
+```
+
+### TWG Teams
+
+```{r echo=FALSE, warning=FALSE}
+twg_team <- readxl::read_xlsx("data/TWG_teams.xlsx")
+datatable(twg_team, rownames = FALSE)
+
+```
+
+
+## Geographical targeting status
+
+### NW and SW Idp Targeting
+
+Le ciblage des IDPs dans le NOSO a permis de couvrir, dans le SW, 2 départements, 7 arrondissements et 28 villages. Dans le NW, 5 départements, 11 arrondissements et 87 villages ont été couverts. Au total, 17 876 ménages ont été enquêtés, dont 12 809 dans le NW et 5 067 dans le SW.
+
+:::::: columns
+::: {.column width="50%"}
+```{r echo=FALSE, warning=FALSE}
+situation <- readxl::read_xlsx("data/situation2.xlsx")
+shape_cmr <- st_read("data/cmr_admbnda_inc_20180104_SHP/cmr_admbnda_adm3_inc_20180104.shp",quiet = T)
+situation <- situation |> left_join(
+  shape_cmr, by = "ADM3_PCODE"
+)
+# leaflet
+situation <- st_as_sf(situation)
+
+pal <-  colorFactor(palette = c("#c6ffc7", "#e02d00"),
+                    levels = c("North-West", "South-West"))
+
+popupvalue <- paste0("<br><strong>Region :  </strong>",situation$Region,
+                     "<br><strong>Division :  </strong>",situation$Divisions,
+                     "<br><strong>Subdivision :  </strong>",situation$`Subdivisions`) %>% 
+  lapply(htmltools::HTML)
+
+adminpopup <- paste0("<br><strong>Region :  </strong>",situation$Region,
+                     "<br><strong>Division :  </strong>",situation$Divisions,
+                     "<br><strong>Subdivision :  </strong>",situation$`Subdivisions`) %>% 
+  lapply(htmltools::HTML)
+
+situation %>% leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>%
+  # setView(lat= 13, lng=3, zoom=4) %>%
+  addPolygons(
+    fillColor = ~pal(situation$Region),
+    fillOpacity = 0.7,
+    color = "white",
+    opacity = 0.7,
+    weight = 2,
+    dashArray = "2",
+    popup = popupvalue,
+    highlight = highlightOptions(
+      weight = 3,
+      color = "black",
+      fillOpacity = 1,
+      bringToFront = TRUE),
+    label = adminpopup,
+    labelOptions = labelOptions(
+      textsize = "12px",
+      direction = "auto"
+    )
+    
+  ) %>% addLegend(
+    pal = pal, values = ~situation$Region,
+    opacity = 0.7, title = "Geographical tareting", position = "topright"
+  )
+```
+:::
+
+::: {.column width="5%"}
+:::
+
+::: {.column width="45%"}
+```{r echo=FALSE, warning=FALSE}
+data_noso <- read.csv("Data/all_data.csv")
+data_noso <- data_noso |> select(ADMIN1Name,division,sub_division,village,n_HH)
+datatable(data_noso, rownames = FALSE)
+```
+:::
+::::::
+
+## Beneficiaries targeting status
+
+### NW and SW IDPs targeting
+
+Un caseload de 30 000 bénéficiaires a été défini pour le NW et 18 000 bénéficiaires pour le SW. Parmi eux, 85 % doivent être des IDPs et 15 % de la population hôte.
+
+Ainsi, la répartition sera la suivante :
+
+-   **NW** : 25 500 IDPs et 4 500 membres de la population hôte.
+
+-   **SW** : 15 300 IDPs et 2 700 membres de la population hôte
+
+:::::: columns
+::: {.column width="55%"}
+```{r echo=FALSE, warning=FALSE}
+df <- data.frame(val = c(0.85, 0.3, 0.2))
+df |>
+  e_charts() |>
+  e_grid(top = "20%", bottom = "20%") |> 
+  e_liquid(val, , radius = "40%") |> 
+  e_title("Percentage of IDPs in the caseload")
+```
+:::
+
+::: {.column width="5%"}
+:::
+
+::: {.column width="40%"}
+```{r echo=FALSE, warning=FALSE}
+caseload <- read.csv("Data/caseload.csv")
+datatable(caseload, rownames = FALSE)
+
+```
+:::
+::::::
+
+## Community Validation
+
+La validation communautaire est finalisée dans le SW et atteint 67 % dans le NW. Toutefois, le retard observé dans le NW s’explique par l’ajout d’un caseload supplémentaire de 5 000 bénéficiaires, prolongeant ainsi la collecte dans certains villages. La validation communautaire est actuellement en cours Ngo-ketunjia et devra être finalisée cette semaine.
+
+:::::: columns
+::: {.column width="60%"}
+```{r echo=FALSE, warning=FALSE}
+situation <- readxl::read_xlsx("data/situation2.xlsx")
+shape_cmr <- st_read("data/cmr_admbnda_inc_20180104_SHP/cmr_admbnda_adm3_inc_20180104.shp",quiet = T)
+situation <- situation |> left_join(
+  shape_cmr, by = "ADM3_PCODE"
+)
+
+# leaflet
+situation <- st_as_sf(situation)
+
+pal <-  colorFactor(palette = c("#c6ffc7", "#e02d00"),
+                    levels = c("complete", "ongoing"))
+
+popupvalue <- paste0("<br><strong>Region :  </strong>",situation$Region,
+                     "<br><strong>Division :  </strong>",situation$Divisions,
+                     "<br><strong>Subdivision :  </strong>",situation$`Subdivisions`,
+                     "<br><strong>Community validation :  </strong>",situation$`community validation`) %>% 
+  lapply(htmltools::HTML)
+
+adminpopup <- paste0("<br><strong>Region :  </strong>",situation$Region,
+                     "<br><strong>Division :  </strong>",situation$Divisions,
+                     "<br><strong>Subdivision :  </strong>",situation$`Subdivisions`,
+                     "<br><strong>Community Validation:  </strong>",situation$`community validation`) %>% 
+  lapply(htmltools::HTML)
+
+situation %>% leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>%
+  # setView(lat= 13, lng=3, zoom=4) %>%
+  addPolygons(
+    fillColor = ~pal(situation$`community validation`),
+    fillOpacity = 0.7,
+    color = "white",
+    opacity = 0.7,
+    weight = 2,
+    dashArray = "2",
+    popup = popupvalue,
+    highlight = highlightOptions(
+      weight = 3,
+      color = "black",
+      fillOpacity = 1,
+      bringToFront = TRUE),
+    label = adminpopup,
+    labelOptions = labelOptions(
+      textsize = "12px",
+      direction = "auto"
+    )
+    
+  ) %>% addLegend(
+    pal = pal, values = ~situation$`community validation`,
+    opacity = 0.7, title = "Community Validation", position = "topright"
+  )
+```
+:::
+
+::: {.column width="5%"}
+:::
+
+::: {.column width="35%"}
+```{r echo=FALSE, warning=FALSE}
+data_community <- read.csv("Data/community validation.csv")
+datatable(data_community, rownames = FALSE)
+
+```
+:::
+::::::
+
+Parmi les ménages identifiés comme les plus vulnérables, 84 % sont dirigés par une femme.
+
+Dans les ménages IDPs, 2 411 foyers, soit 84 %, sont dirigés par des femmes, contre 16 % par des hommes.
+
+La même tendance est observée au sein des populations hôtes, avec 83 % soit 489 ménages dirigés par des femmes et 17 % par des hommes
+
+```{r echo=FALSE, warning=FALSE}
+idp_sw <- readxl::read_xlsx("data/idp_validated.xlsx")
+host_sw <- readxl::read_xlsx("data/host_validated.xlsx")
+
+```
+
+::::: columns
+::: {.column width="45%"}
+```{r echo=FALSE, warning=FALSE}
+idp_sw |> select(HHHSex) |> tbl_summary() |> modify_caption("**IDPs HH par Sexe**")
+```
+:::
+
+::: {.column width="45%"}
+```{r echo=FALSE, warning=FALSE}
+host_sw  |> select(HHHSex) |> tbl_summary() |> modify_caption("**Host HH par Sexe**")
+```
+:::
+:::::
+
+## Chalenge/ Défi
+
+-   Liste Partagé par RAM différent de la liste finale dans Scope
+
+-   FLA, CPC et tout ce qui concerne le côté administratif prend un peu de temps
+
+-   CPs en charge du ciblage doit être différent du CP en charge de la distribution
+
+## Seasonal Targeting
+
+De nouvelles orientations ont été données par le RBD à travers l'Hotspot Analysis pour la priorisation et le ciblage géographique au niveau Admin2 (départements).
+
+Au Cameroun, des avancées significatives ont déjà été réalisées. Il est désormais nécessaire d'envisager la validation des listes au niveau des villages avec les autorités, afin de progresser après le FLA de la Croix-Rouge
+
+![](image/slide1.PNG){fig-align="center"}
